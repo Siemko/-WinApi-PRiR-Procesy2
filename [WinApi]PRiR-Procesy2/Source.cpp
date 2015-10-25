@@ -5,8 +5,8 @@
 #include <tchar.h>
 #include <conio.h>
 using namespace std;
-
-int _tmain(int argc, _TCHAR* argv[])
+HANDLE hFile, hMutex;
+int _tmain(int argc, char* argv[])
 {
 	cout << "** THIS IS MAIN PROCESS **";
 	//Process & File Vars
@@ -19,14 +19,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	si.cb = sizeof(si);
 	sap.nLength = sizeof(sap);
 	sap.bInheritHandle = TRUE;
-	HANDLE hFile, hMutex;
+
 	DWORD ile;
 
 	stringstream cmdLine, primenums;
-	string mutexName("mutex1");
-
-	hFile = CreateFile("wyjscie.txt", FILE_ALL_ACCESS, 0, &sap, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	hMutex = CreateMutex(NULL, FALSE, mutexName.c_str());
+	char mutexName[] = "mutex1";
+	char plik[] = "wyjscie.txt";
+	hFile = CreateFile(plik, FILE_ALL_ACCESS, 0, &sap, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	hMutex = CreateMutex(NULL, FALSE, mutexName);
 	if (hMutex == NULL)
 	{
 		cout << "Mutex error" << endl;
@@ -41,15 +41,16 @@ int _tmain(int argc, _TCHAR* argv[])
 		//wynik += i * 2 + 123;
 		cout << ".";
 	}
-	WriteFile(hFile, napis, sizeof(napis), &ile, NULL);
-	ReleaseMutex(hMutex);
-	cmdLine << "Child.exe " << (DWORD)hFile << " " << mutexName << " " << napis;
+	WriteFile(hFile, napis, strlen(napis), &ile, NULL);
+	//ReleaseMutex(hMutex);
+	cmdLine << "Child.exe " << reinterpret_cast<std::size_t>(hFile) << " " << mutexName << " " << napis;
 
 	if (!CreateProcess(NULL, (char*)cmdLine.str().c_str(), NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi))
 	{
 		cout << "ERROR";
 	}
-
+	Sleep(10000);
+	ReleaseMutex(hMutex);
 	WaitForSingleObject(pi.hThread, INFINITE);
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);

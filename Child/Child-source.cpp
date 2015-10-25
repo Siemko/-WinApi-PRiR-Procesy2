@@ -8,33 +8,29 @@
 #include <stdlib.h>
 
 using namespace std;
+HANDLE hFile, hMutex;
 
-int _tmain(int argc, _TCHAR* argv[])
+int _tmain(int argc, char* argv[])
 {
-	HANDLE hFile, hMutex;
-	DWORD ileb, dwWaitResult;
-	char buff[] = "\n->Gówno";
+	stringstream ss(argv[1]);
+	UINT_PTR iFile;
+	ss >> iFile;
+	HANDLE hFile = reinterpret_cast<HANDLE>(iFile);
+	DWORD ileb;
+	char napis2[] = "\nGowno";
 	//int wynik;
 	cout << "SIEMA!" << endl;
-	hFile = (HANDLE)argv[1];
-	hMutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, argv[2]);
+	
+	hMutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, (LPWSTR)argv[2]);
 	if (hMutex == NULL)
 	{
 		cout << "Mutex error" << endl;
 		return 1;
 	}
-	strcpy(buff, (char *)argv[3]);
-	dwWaitResult = WaitForSingleObject(hMutex, INFINITE);
-	if (dwWaitResult == WAIT_OBJECT_0)
-	{
-		cout << "Powinienem zapisac do pliku: " << buff << endl;
-		WriteFile(hFile, buff, sizeof(buff), &ileb, NULL);
-		
-	}
-	else if (dwWaitResult == WAIT_ABANDONED)
-	{
-		cout << "B³¹d, chuje!" << endl;
-	}
+	WaitForSingleObject(hMutex, INFINITE);
+	cout << "Powinienem zapisac do pliku: " << napis2 << endl;
+	if(!WriteFile(hFile, napis2, strlen(napis2), &ileb, NULL))
+		cout << "Ale nie zapisa³em, bo ERROR NAMBER: " <<GetLastError() <<endl;
 	_getch();
 	ReleaseMutex(hMutex);
 	CloseHandle(hMutex);
